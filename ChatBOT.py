@@ -3,12 +3,14 @@ import streamlit as st
 
 with st.sidebar:
     openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-    "[Get an OpenAI API key](https://platform.openai.com/account/api-keys)"
-    "[View the source code](https://github.com/streamlit/llm-examples/blob/main/Chatbot.py)"
-    "[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/llm-examples?quickstart=1)"
+    custom_gpt_url = st.text_input("Custom GPT Model URL", key="custom_gpt_url")
 
-st.title("💬 SAP Agentic Automaiton")
+    if st.button("Clear Chat"):
+        st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+
+st.title("💬 SAP Agentic Automation")
 st.caption("🚀 A UiPath ChatBOT powered by OpenAI")
+
 if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
 
@@ -20,7 +22,7 @@ if prompt := st.chat_input():
         st.info("Please add your OpenAI API key to continue.")
         st.stop()
 
-    client = OpenAI(api_key=openai_api_key)
+    client = OpenAI(api_key=openai_api_key, api_base=custom_gpt_url) if custom_gpt_url else OpenAI(api_key=openai_api_key)
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
     response = client.chat.completions.create(model="gpt-3.5-turbo", messages=st.session_state.messages)
