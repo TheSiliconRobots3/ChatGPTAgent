@@ -1,6 +1,6 @@
-import streamlit as st
-import os
-import subprocess
-import platform
-import speech_recognition as sr
-import pyttsx3
+streamlit
+os
+subprocess
+platform
+speech_recognition as sr
+pyttsx3
