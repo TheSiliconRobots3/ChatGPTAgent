@@ -2,5 +2,3 @@ streamlit
 os
 subprocess
 platform
-speech_recognition as sr
-pyttsx3
