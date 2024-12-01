@@ -1,31 +1,63 @@
-from openai import OpenAI
 import streamlit as st
+import os
+import subprocess
+import platform
+import speech_recognition as sr
+import pyttsx3
 
-with st.sidebar:
-    openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-    custom_gpt_url = st.text_input("Custom GPT Model URL", key="custom_gpt_url")
+# Initialize the text-to-speech engine
+engine = pyttsx3.init()
 
-    if st.button("Clear Chat"):
-        st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+def speak(text):
+    """Speak the given text."""
+    engine.say(text)
+    engine.runAndWait()
 
-st.title("💬 SAP Agentic Automation")
-st.caption("🚀 A UiPath ChatBOT powered by OpenAI")
+def open_application(app_name):
+    """Open an application based on the given name or path."""
+    try:
+        if platform.system() == "Windows":
+            os.startfile(app_name)
+        elif platform.system() == "Darwin":  # macOS
+            subprocess.call(["open", app_name])
+        elif platform.system() == "Linux":  # Linux
+            subprocess.call(["xdg-open", app_name])
+        else:
+            return "Unsupported operating system."
+        return f"{app_name} is opening!"
+    except Exception as e:
+        return f"Error: {e}"
 
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+def listen_command():
+    """Listen to the user's voice command and return the transcribed text."""
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        st.info("Listening for a voice command...")
+        try:
+            audio = recognizer.listen(source, timeout=5)
+            command = recognizer.recognize_google(audio)
+            return command
+        except sr.UnknownValueError:
+            return "Sorry, I couldn't understand your command."
+        except sr.RequestError:
+            return "Could not request results from Google Speech Recognition."
+        except Exception as e:
+            return f"Error: {e}"
 
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+# Streamlit UI
+st.title("Voice Command Application Launcher")
+st.write("Use your voice to command your computer to open applications.")
 
-if prompt := st.chat_input():
-    if not openai_api_key:
-        st.info("Please add your OpenAI API key to continue.")
-        st.stop()
-
-    client = OpenAI(api_key=openai_api_key, api_base=custom_gpt_url) if custom_gpt_url else OpenAI(api_key=openai_api_key)
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    st.chat_message("user").write(prompt)
-    response = client.chat.completions.create(model="gpt-3.5-turbo", messages=st.session_state.messages)
-    msg = response.choices[0].message.content
-    st.session_state.messages.append({"role": "assistant", "content": msg})
-    st.chat_message("assistant").write(msg)
+# Button to activate voice command
+if st.button("Speak Command"):
+    command = listen_command()
+    st.write(f"You said: {command}")
+    speak(f"You said: {command}")
+    if command.lower() in ["exit", "close", "stop"]:
+        speak("Exiting the application launcher.")
+    elif command.strip():
+        result = open_application(command)
+        st.success(result)
+        speak(result)
+    else:
+        st.error("No valid command detected. Please try again.")
